@@ -7,6 +7,8 @@
 
 from PIL import Image
 from pylab import *
+from numpy import *
+from scipy.ndimage import filters
 import time
 import heapq
 import math
@@ -57,6 +59,7 @@ for rbox in range(0, height/boxheight): # need to add the +1 in later for the pi
     for cbox in range(0, width/boxwidth):
         # grab the box of 15 x 15 pixels
         box = [[im[r][c] for c in range(cbox*boxwidth, (cbox+1)*boxwidth)] for r in range(rbox*boxheight, (rbox+1)*boxheight)]
+        box = im[rbox*boxheight:(rbox+1)*boxheight][cbox*boxwidth:(cbox+1)*boxwidth]
 
         # store each RGB pixel color in a max heap based on luminosity value and pull out the top 25%
         heap = []
@@ -79,6 +82,8 @@ for rbox in range(0, height/boxheight): # need to add the +1 in later for the pi
             for c in range(cbox*boxwidth, (cbox+1)*boxwidth):
                 wb_im[r][c] = color_wb
 
+wb_im_smooth = filters.gaussian_filter(wb_im, 1)
+
 print 'took', timer.getAndReset(), 'seconds.'
 
 """ need to eventually do step 3 which is "Filter the colors of the cells by locally fitting a plane in the RGB
@@ -92,7 +97,7 @@ print 'Uniform whitening...'
 pen_im = [[False for j in range(0, width)] for i in range(0, height)]
 for r in range(0, height):
     for c in range(0, width):
-        im[r][c] = [min(1.0, im[r][c][n]*1.0/wb_im[r][c][n])*255 for n in range(0, len(im[r][c]))]
+        im[r][c] = [min(1.0, im[r][c][n]*1.0/wb_im_smooth[r][c][n])*255 for n in range(0, len(im[r][c]))]
 
 print 'took', timer.getAndReset(), 'seconds.'
 
