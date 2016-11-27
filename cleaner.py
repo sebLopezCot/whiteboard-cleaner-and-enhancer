@@ -10,6 +10,7 @@ from pylab import *
 import time
 import heapq
 import math
+import sys
 
 class Timer:
     def __init__(self):
@@ -36,7 +37,14 @@ timer.start()
 
 print 'Loading image...'
 
-im = array(Image.open('board1.jpg'))
+# m_img_path = 'board1.jpg'
+m_img_path = 'bad_whiteboard_small_res.jpg'
+
+if len(sys.argv) > 1:
+    m_img_path = sys.argv[1]
+
+image = Image.open(m_img_path).convert('RGB')
+im = array(image)
 
 print 'took', timer.getAndReset(), 'seconds.'
 
@@ -46,17 +54,36 @@ height = len(im)
 width = len(im[0])
 
 # calculate the whiteboard image
-boxwidth = boxheight = 15
-wb_im = array(im)
+boxwidth = boxheight = 10
+max_wb_im_dim = 150
+size = ()
+if width > height:
+    size = (max_wb_im_dim,int(1.0 * max_wb_im_dim / width * height))
+else:
+    size = (int(1.0 * max_wb_im_dim / height * width), max_wb_im_dim)
+
+smaller_im = array(image.resize(size))
+
+smaller_h = len(smaller_im)
+smaller_w = len(smaller_im[0])
+
+wb_im = array(smaller_im)
 
 print 'took', timer.getAndReset(), 'seconds.'
 
 print 'Calculating whiteboard image...'
 
-for rbox in range(0, height/boxheight): # need to add the +1 in later for the pixels that end up not fitting in the box
-    for cbox in range(0, width/boxwidth):
+profile_sum = 0
+num_profiles = 0
+queTimer = Timer()
+queTimer.start()
+
+for rbox in range(0, smaller_h/boxheight): # need to add the +1 in later for the pixels that end up not fitting in the box
+    for cbox in range(0, smaller_w/boxwidth):
         # grab the box of 15 x 15 pixels
-        box = [[im[r][c] for c in range(cbox*boxwidth, (cbox+1)*boxwidth)] for r in range(rbox*boxheight, (rbox+1)*boxheight)]
+        box = [[smaller_im[r][c] for c in range(cbox*boxwidth, (cbox+1)*boxwidth)] for r in range(rbox*boxheight, (rbox+1)*boxheight)]
+
+        queTimer.getAndReset()
 
         # store each RGB pixel color in a max heap based on luminosity value and pull out the top 25%
         heap = []
@@ -79,36 +106,44 @@ for rbox in range(0, height/boxheight): # need to add the +1 in later for the pi
             for c in range(cbox*boxwidth, (cbox+1)*boxwidth):
                 wb_im[r][c] = color_wb
 
-print 'took', timer.getAndReset(), 'seconds.'
-
-""" need to eventually do step 3 which is "Filter the colors of the cells by locally fitting a plane in the RGB
-space. Occasionally there are cells that are entirely covered by pen strokes, the cell color computed in
-Step 2 is consequently incorrect. Those colors are rejected as outliers by the locally fitted plane and are
-replaced by the interpolated values from its neighbors" """
-
-print 'Uniform whitening...'
-
-# make the background uniformly white
-pen_im = [[False for j in range(0, width)] for i in range(0, height)]
-for r in range(0, height):
-    for c in range(0, width):
-        im[r][c] = [min(1.0, im[r][c][n]*1.0/wb_im[r][c][n])*255 for n in range(0, len(im[r][c]))]
+        profile_sum += queTimer.getAndReset()
+        num_profiles += 1
 
 print 'took', timer.getAndReset(), 'seconds.'
 
-print 'Pen saturation...'
+print 'with average queue building time of ', profile_sum / num_profiles
 
-# reduce image noise and increase color saturation of the pen strokes
-p = 2.0
-for r in range(0, height):
-    for c in range(0, width):
-        im[r][c] = [im[r][c][n] * 0.5 * (1.0 - cos(math.pi * (im[r][c][n]/255.0)**p)) for n in range(0, len(im[r][c]))]
-
-print 'took', timer.getAndReset(), 'seconds.'
-
-
-imshow(im)
-
-print 'Showing image...'
-
+imshow(wb_im)
 show()
+
+# """ need to eventually do step 3 which is "Filter the colors of the cells by locally fitting a plane in the RGB
+# space. Occasionally there are cells that are entirely covered by pen strokes, the cell color computed in
+# Step 2 is consequently incorrect. Those colors are rejected as outliers by the locally fitted plane and are
+# replaced by the interpolated values from its neighbors" """
+
+# print 'Uniform whitening...'
+
+# # make the background uniformly white
+# pen_im = [[False for j in range(0, width)] for i in range(0, height)]
+# for r in range(0, height):
+#     for c in range(0, width):
+#         im[r][c] = [min(1.0, im[r][c][n]*1.0/wb_im[r][c][n])*255 for n in range(0, len(im[r][c]))]
+
+# print 'took', timer.getAndReset(), 'seconds.'
+
+# print 'Pen saturation...'
+
+# # reduce image noise and increase color saturation of the pen strokes
+# p = 2.0
+# for r in range(0, height):
+#     for c in range(0, width):
+#         im[r][c] = [im[r][c][n] * 0.5 * (1.0 - cos(math.pi * (im[r][c][n]/255.0)**p)) for n in range(0, len(im[r][c]))]
+
+# print 'took', timer.getAndReset(), 'seconds.'
+
+
+# imshow(im)
+
+# print 'Showing image...'
+
+# show()
