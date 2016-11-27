@@ -12,6 +12,8 @@ import heapq
 import math
 import sys
 
+import fitting
+
 class Timer:
     def __init__(self):
         self.timer = 0
@@ -37,8 +39,8 @@ timer.start()
 
 print 'Loading image...'
 
-# m_img_path = 'board1.jpg'
-m_img_path = 'bad_whiteboard_small_res.jpg'
+m_img_path = 'board1.jpg'
+# m_img_path = 'bad_whiteboard_small_res.jpg'
 
 if len(sys.argv) > 1:
     m_img_path = sys.argv[1]
@@ -78,9 +80,11 @@ num_profiles = 0
 queTimer = Timer()
 queTimer.start()
 
+points_to_fit = [] # for fitting to rgb colorspace
+
 for rbox in range(0, smaller_h/boxheight): # need to add the +1 in later for the pixels that end up not fitting in the box
     for cbox in range(0, smaller_w/boxwidth):
-        # grab the box of 15 x 15 pixels
+        # grab the box of pixels
         box = [[smaller_im[r][c] for c in range(cbox*boxwidth, (cbox+1)*boxwidth)] for r in range(rbox*boxheight, (rbox+1)*boxheight)]
 
         queTimer.getAndReset()
@@ -100,6 +104,7 @@ for rbox in range(0, smaller_h/boxheight): # need to add the +1 in later for the
         b = sum([topcolors[i][2] for i in range(0,n)]) / n
 
         color_wb = (r,g,b)
+        points_to_fit.append(((0.5+cbox)*boxwidth, (0.5+rbox)*boxheight, lum(color_wb)))
 
         # may be able to reduce time by only saving into a rbox by cbox sized array of color vals
         for r in range(rbox*boxheight, (rbox+1)*boxheight):
@@ -113,37 +118,53 @@ print 'took', timer.getAndReset(), 'seconds.'
 
 print 'with average queue building time of ', profile_sum / num_profiles
 
+fit_func = fitting.fit(points_to_fit)
+
+max_val = 0
+min_val = 255
+
+for r in range(smaller_h):
+    for c in range(smaller_w):
+        wb_im[r][c] = [int(fit_func(c,r))] * 3
+        if wb_im[r][c][0] > max_val:
+            max_val = wb_im[r][c][0]
+
+wb_im = array(Image.fromarray(wb_im).resize((width, height)))
+
+figure()
 imshow(wb_im)
+figure()
+imshow(im)
 show()
 
-# """ need to eventually do step 3 which is "Filter the colors of the cells by locally fitting a plane in the RGB
-# space. Occasionally there are cells that are entirely covered by pen strokes, the cell color computed in
-# Step 2 is consequently incorrect. Those colors are rejected as outliers by the locally fitted plane and are
-# replaced by the interpolated values from its neighbors" """
+""" need to eventually do step 3 which is "Filter the colors of the cells by locally fitting a plane in the RGB
+space. Occasionally there are cells that are entirely covered by pen strokes, the cell color computed in
+Step 2 is consequently incorrect. Those colors are rejected as outliers by the locally fitted plane and are
+replaced by the interpolated values from its neighbors" """
 
-# print 'Uniform whitening...'
+print 'Uniform whitening...'
 
-# # make the background uniformly white
-# pen_im = [[False for j in range(0, width)] for i in range(0, height)]
-# for r in range(0, height):
-#     for c in range(0, width):
-#         im[r][c] = [min(1.0, im[r][c][n]*1.0/wb_im[r][c][n])*255 for n in range(0, len(im[r][c]))]
+# make the background uniformly white
+pen_im = [[False for j in range(0, width)] for i in range(0, height)]
+for r in range(0, height):
+    for c in range(0, width):
+        im[r][c] = [min(1.0, im[r][c][n]*1.0/wb_im[r][c][n])*255 for n in range(0, len(im[r][c]))]
 
-# print 'took', timer.getAndReset(), 'seconds.'
+print 'took', timer.getAndReset(), 'seconds.'
 
-# print 'Pen saturation...'
+print 'Pen saturation...'
 
-# # reduce image noise and increase color saturation of the pen strokes
-# p = 2.0
-# for r in range(0, height):
-#     for c in range(0, width):
-#         im[r][c] = [im[r][c][n] * 0.5 * (1.0 - cos(math.pi * (im[r][c][n]/255.0)**p)) for n in range(0, len(im[r][c]))]
+# reduce image noise and increase color saturation of the pen strokes
+p = 2.0
+for r in range(0, height):
+    for c in range(0, width):
+        im[r][c] = [im[r][c][n] * 0.5 * (1.0 - cos(math.pi * (im[r][c][n]/255.0)**p)) for n in range(0, len(im[r][c]))]
 
-# print 'took', timer.getAndReset(), 'seconds.'
+print 'took', timer.getAndReset(), 'seconds.'
 
 
-# imshow(im)
+imshow(im)
 
-# print 'Showing image...'
+print 'Showing image...'
 
-# show()
+show()
