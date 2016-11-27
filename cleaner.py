@@ -12,7 +12,6 @@ from scipy.ndimage import filters
 import time
 import heapq
 import math
-import sys
 
 class Timer:
     def __init__(self):
@@ -39,9 +38,7 @@ timer.start()
 
 print 'Loading image...'
 
-path = sys.argv[1] if len(sys.argv) > 1 else 'board1.jpg'
-
-im = array(Image.open(path).convert("RGB"))
+im = array(Image.open('board1.jpg'))
 
 print 'took', timer.getAndReset(), 'seconds.'
 
@@ -62,6 +59,7 @@ for rbox in range(0, height/boxheight): # need to add the +1 in later for the pi
     for cbox in range(0, width/boxwidth):
         # grab the box of 15 x 15 pixels
         box = [[im[r][c] for c in range(cbox*boxwidth, (cbox+1)*boxwidth)] for r in range(rbox*boxheight, (rbox+1)*boxheight)]
+        box = im[rbox*boxheight:(rbox+1)*boxheight][cbox*boxwidth:(cbox+1)*boxwidth]
 
         # store each RGB pixel color in a max heap based on luminosity value and pull out the top 25%
         heap = []
@@ -96,6 +94,7 @@ replaced by the interpolated values from its neighbors" """
 print 'Uniform whitening...'
 
 # make the background uniformly white
+pen_im = [[False for j in range(0, width)] for i in range(0, height)]
 for r in range(0, height):
     for c in range(0, width):
         im[r][c] = [min(1.0, im[r][c][n]*1.0/wb_im_smooth[r][c][n])*255 for n in range(0, len(im[r][c]))]
