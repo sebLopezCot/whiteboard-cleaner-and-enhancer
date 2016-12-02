@@ -35,24 +35,24 @@ def fit(points):
   c = res.x[2]
 
 
-  xs, ys, zs = zip(*points)
+  # xs, ys, zs = zip(*points)
 
-  fig = plt.figure()
-  ax = fig.add_subplot(111, projection='3d')
+  # fig = plt.figure()
+  # ax = fig.add_subplot(111, projection='3d')
 
-  ax.scatter(xs, ys, zs)
+  # ax.scatter(xs, ys, zs)
 
-  point  = np.array([0.0, 0.0, c])
-  normal = np.array(cross([1,0,a], [0,1,b]))
-  d = -point.dot(normal)
-  xx, yy = np.meshgrid([0,255], [0,255])
-  z = (-normal[0] * xx - normal[1] * yy - d) * 1. /normal[2]
-  ax.plot_surface(xx, yy, z, alpha=0.2, color=[0,1,0])
+  # point  = np.array([0.0, 0.0, c])
+  # normal = np.array(cross([1,0,a], [0,1,b]))
+  # d = -point.dot(normal)
+  # xx, yy = np.meshgrid([0,255], [0,255])
+  # z = (-normal[0] * xx - normal[1] * yy - d) * 1. /normal[2]
+  # ax.plot_surface(xx, yy, z, alpha=0.2, color=[0,1,0])
 
-  ax.set_xlim(0,255)
-  ax.set_ylim(0,255)
-  ax.set_zlim(0,255)
+  # ax.set_xlim(0,255)
+  # ax.set_ylim(0,255)
+  # ax.set_zlim(0,255)
 
-  plt.show()
+  # plt.show()
   
   return lambda x,y: plane(x,y,res.x)

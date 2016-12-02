@@ -39,8 +39,8 @@ timer.start()
 
 print 'Loading image...'
 
-m_img_path = 'board1.jpg'
-# m_img_path = 'bad_whiteboard_small_res.jpg'
+# m_img_path = 'board1.jpg'
+m_img_path = 'bad_whiteboard_small_res_focus.jpg'
 
 if len(sys.argv) > 1:
     m_img_path = sys.argv[1]
@@ -114,9 +114,6 @@ for rbox in range(0, smaller_h/boxheight): # need to add the +1 in later for the
         profile_sum += queTimer.getAndReset()
         num_profiles += 1
 
-print 'took', timer.getAndReset(), 'seconds.'
-
-print 'with average queue building time of ', profile_sum / num_profiles
 
 fit_func = fitting.fit(points_to_fit)
 
@@ -137,6 +134,10 @@ figure()
 imshow(im)
 show()
 
+print 'took', timer.getAndReset(), 'seconds.'
+
+print 'with average queue building time of ', profile_sum / num_profiles
+
 """ need to eventually do step 3 which is "Filter the colors of the cells by locally fitting a plane in the RGB
 space. Occasionally there are cells that are entirely covered by pen strokes, the cell color computed in
 Step 2 is consequently incorrect. Those colors are rejected as outliers by the locally fitted plane and are
@@ -148,14 +149,16 @@ print 'Uniform whitening...'
 pen_im = [[False for j in range(0, width)] for i in range(0, height)]
 for r in range(0, height):
     for c in range(0, width):
-        im[r][c] = [min(1.0, im[r][c][n]*1.0/wb_im[r][c][n])*255 for n in range(0, len(im[r][c]))]
+        im[r][c][0] = im[r][c][0]*1.0/wb_im[r][c][0] * 255 if im[r][c][0] < wb_im[r][c][0] else 255
+        im[r][c][1] = im[r][c][1]*1.0/wb_im[r][c][1] * 255 if im[r][c][1] < wb_im[r][c][1] else 255
+        im[r][c][2] = im[r][c][2]*1.0/wb_im[r][c][2] * 255 if im[r][c][2] < wb_im[r][c][2] else 255
 
 print 'took', timer.getAndReset(), 'seconds.'
 
 print 'Pen saturation...'
 
 # reduce image noise and increase color saturation of the pen strokes
-p = 2.0
+p = 1.0
 for r in range(0, height):
     for c in range(0, width):
         im[r][c] = [im[r][c][n] * 0.5 * (1.0 - cos(math.pi * (im[r][c][n]/255.0)**p)) for n in range(0, len(im[r][c]))]
